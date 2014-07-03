@@ -1,2 +1,2 @@
-def run(bot):
-	print "Echo"
+def run(userSettings):
+	print userSettings
