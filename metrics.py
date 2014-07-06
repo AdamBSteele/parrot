@@ -1,2 +1,2 @@
 def run(both):
-	print "Metrics"
+	print ("Metrics")

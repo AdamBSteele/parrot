@@ -1,2 +1,2 @@
 def run(bot):
-	print "Squawk"
+	print ("Squawk")
