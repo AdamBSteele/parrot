@@ -31,7 +31,7 @@ def readEchoes(path):
     res = []
     lines = []
     lineNo = 0
-    for line in open(path + 'echo.csv'):
+    for line in open(path + '/echo.csv'):
         try:
             newEcho = Echo(line.strip())
             if NOW > newEcho.time:
@@ -45,7 +45,7 @@ def readEchoes(path):
         lineNo += 1
 
     # Write all non-posted lines
-    with open(path + 'echo.csv', 'w') as myfile:
+    with open(path + '/echo.csv', 'w') as myfile:
         for line in lines:
             myfile.write(line)
 

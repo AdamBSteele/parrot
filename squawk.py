@@ -18,7 +18,7 @@ def grabSquawk(user):
     res = []
     lines = []
     lineNo = 0
-    for line in open(path + 'squawk.csv'):
+    for line in open(path + '/squawk.csv'):
         try:
             newEcho = Echo(line.strip())
             if NOW > newEcho.time:
@@ -32,7 +32,7 @@ def grabSquawk(user):
         lineNo += 1
 
     # Write all non-posted lines
-    with open(path + 'squawk.csv', 'w') as myfile:
+    with open(path + '/squawk.csv', 'w') as myfile:
         for line in lines:
             myfile.write(line)
 

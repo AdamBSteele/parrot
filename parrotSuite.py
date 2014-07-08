@@ -16,7 +16,10 @@ ParrotSuite grabs the bots from PARROTDIR
 
 ParrotSuite contains classes:
     - User
-    - Status
+    - tStatus -> the status as pulled from Twitter
+    - pStatus -> the common parts of Echoes and Squawks
+    - Echo -> pStatus + postTime
+    - Squawk -> pStatus + startTime + endTime
 """
 
 
@@ -28,7 +31,7 @@ os.chdir(PARROTPATH)
 
 # Grab settings from path
 SETTINGS = {}
-for line in open(PARROTPATH + 'config.txt'):
+for line in open(PARROTPATH + '/config.txt'):
     if '//' not in line[0:1]:
         x,y = line.split('=')
         SETTINGS[x.strip()] = y.strip()
@@ -44,7 +47,7 @@ class User:
         self.path = path
         settings = {}
         
-        for line in open(self.path + 'parrot.cfg'):
+        for line in open(self.path + '/parrot.cfg'):
             x,y = line.split('=')
             settings[x.strip()] = y.strip()
 
@@ -52,7 +55,7 @@ class User:
         
         self.t = self.initializeTwitter()
 
-        self.statuses = self.grabStatuses()
+        self.statuses = self.grabTStatuses()
 
     def initializeTwitter(self):
         OTOKEN = SETTINGS['OTOKEN']
@@ -71,7 +74,7 @@ class User:
         return t
 
 
-    def grabStatuses(self):
+    def grabTStatuses(self):
         # Grab statuses
         try:
             statuses = self.t.statuses.home_timeline()
@@ -86,7 +89,7 @@ class User:
 
     def writeEchoCSV(self, echo):
         # Convert values to string then add them to CSV file
-        with open(self.path + "echo.csv", "a") as myfile:
+        with open(self.path + "/echo.csv", "a") as myfile:
             myfile.write('\n' + echo.string)
         myfile.close
 
@@ -114,7 +117,96 @@ class User:
         res += "\n (" + str(self.statuses[0].age) + "s old)"
         return res
 
+"""
+pStatus = parrotStatus
+
+pStatus contains all the variables that are common between echo and squawk,
+    which inherit pStatus
+"""
+class pStatus:
+    def __init__(self, text, location, gHash, lHash, categories, userID=None):
+        self.text = text
+        self.location = location
+        self.gHash = gHash
+        self.lHash = lHash
+        self.categories = categories
+        self.userID = userID
+
+    # The text of the status update (140 chars or less)
+    @property
+    def text(self):
+        return self.text
+
+    @text.setter
+    def text(self, value):
+        assert(type(value) == str),\
+            "Tried to pass type \'%s\' into pStatus.text" % str(type(value))
+        assert(len(value) < 140),\
+            "Tried to pass %d char status into pStatus.text" % len(value)
+        self.text = value
+
+    @property
+    def location(self):
+        return self.location
+
+    @location.setter
+    def location(self, value):
+        assert(type(value) == str or type(value) == int),\
+            "Tried to pass type \'%s\' into pStatus.location" % str(type(value))
+        self.location = str(value)
+
+    @property
+    def gHash(self):
+        return self.gHash
+
+    @gHash.setter
+    def gHash(self, value):
+        assert(type(value) == str or type(value) == bool),\
+            "Tried to pass type \'%s\' into pStatus.gHash" % str(type(value))
+        if type(value) == bool:
+            self.gHash = value
+        else:
+            if 'True' in value:
+                self.gHash = True
+            elif 'False' in value:
+                self.gHash = False
+            else:
+                self.gHash = False
+    
+    @property
+    def lHash(self):
+        return self.lHash
+
+    @lHash.setter
+    def lHash(self, value):
+        assert(type(value) == str or type(value) == bool),\
+            "Tried to pass type \'%s\' into pStatus.lHash" % str(type(value))
+        if type(value) == bool:
+                self.lHash = value
+        else:
+            if 'True' in value:
+                self.lHash = True
+            elif 'False' in value:
+                self.lHash = False
+            else:
+                self.lHash = False
+
+    @property
+    def categories(self):
+        return self.categories
+
+    @categories.setter
+    def categories(self, value):
+        assert(type(value) == str or type(value) == list),\
+            "Tried to pass type \'%s\' into pStatus.categories" % str(type(value))
+        if type(value) == list:
+            self.categories = value
+        if type(value) == str:
+            self.categories = list(','.split(value))
+
+
 # tStatus = twitter status
+#   aka the json dict returned by Twitter
 class tStatus:
     def __init__(self, status):
         self.text = status.get('text')

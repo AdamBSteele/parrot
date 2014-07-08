@@ -23,7 +23,7 @@ def main():
     args = parseArgs()
 
     for bot in botList():
-        fullPath = PARROTPATH + bot + '/'
+        fullPath = PARROTPATH + '/' +  bot
         user = User(fullPath)
 
         # If flag is set, create & test an echo
