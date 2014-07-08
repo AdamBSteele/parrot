@@ -8,34 +8,36 @@ DEBUG_SETTINGS = False
 The driver is run every 3 minutes on a cronJob.
 The driver iterates through all bots in PARROTDIR
   to execute its (3) main tasks:
-	- Post echoes
-		- Remove posted echoes
-		- Remove old echoes
-	- Post squawks
-		- Count down squawk counter
-		- Remove dead squawks
-	- Update metrics
+    - Post echoes
+        - Remove posted echoes
+        - Remove old echoes
+    - Post squawks
+        - Count down squawk counter
+        - Remove dead squawks
+    - Update metrics
 """
 
 
 
 def main():
     args = parseArgs()
+
     for bot in botList():
         fullPath = PARROTPATH + bot + '/'
         user = User(fullPath)
 
-        # For adding echoes to test bot
-        if 'bot1' in bot:
-	        for _ in range(0, args.createEchoes):
-	            newEcho = createTestEcho()            
-	            user.writeEchoCSV(newEcho)
+        # If flag is set, create & test an echo
+        if args.createEchoes and 'bot1' in bot:
+            testEchoCreation(user, args.createEchoes)
 
-        echoPosted = echo.checkForAutoPost(user, fullPath)
+        # check to see if an echo needs to be posted
+        echoPosted = echo.checkForAutoPost(user)
         
+        # If you didn't post an echo, check if it's time to squawk
         if not echoPosted:
-            squawk.run(user)
+            squawk.check(user)
 
+        # No matter what, grab whatever metrics you can
         metrics.run(user)
 
 
@@ -63,6 +65,10 @@ def createTestEcho():
     newEcho.initFromValues(text, time, location, gHash, lHash, categories)
     return newEcho
 
+def testEchoCreation(user, count):
+    for _ in range(0, count):
+        newEcho = createTestEcho()
+        user.writeEchoCSV(newEcho)
 
 if __name__ == '__main__':
     main()

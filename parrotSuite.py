@@ -41,7 +41,7 @@ def botList():
 
 class User:
     def __init__(self, path):
-        self    .path = path
+        self.path = path
         settings = {}
         
         for line in open(self.path + 'parrot.cfg'):
@@ -81,7 +81,7 @@ class User:
 
         statusList = []
         for x in statuses:
-            statusList.append(Status(x))
+            statusList.append(tStatus(x))
         return statusList
 
     def writeEchoCSV(self, echo):
@@ -91,12 +91,12 @@ class User:
         myfile.close
 
 
-    def postEcho(self, echo):
+    def postStatus(self, status):
         try:
             if DEBUG:
                 print("ECHO POST HAS BEEN DISABLED DUE TO DEBUG")
             else:
-                self.t.statuses.update(status=echo.text)
+                self.t.statuses.update(status=status.text)
         except Exception as e:
             print("Failed to post this echo:")
             print(echo)
@@ -114,7 +114,8 @@ class User:
         res += "\n (" + str(self.statuses[0].age) + "s old)"
         return res
 
-class Status:
+# tStatus = twitter status
+class tStatus:
     def __init__(self, status):
         self.text = status.get('text')
         self.created_at = status.get('created_at')
