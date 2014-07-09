@@ -2,8 +2,6 @@ import os
 import json
 import datetime
 import twitter
-import squawk
-import metrics
 
 """
 ParrotSuite initializes settings for the driver including:
@@ -27,7 +25,7 @@ NOW = datetime.datetime.now()
 FREQUENCY = 300
 
 
-DEBUG =  True
+DEBUG = True
 
 # Set path
 PARROTPATH = os.getenv('PARROTPATH')
@@ -37,26 +35,25 @@ os.chdir(PARROTPATH)
 SETTINGS = {}
 for line in open(PARROTPATH + '/config.txt'):
     if '//' not in line[0:1]:
-        x,y = line.split('=')
+        x, y = line.split('=')
         SETTINGS[x.strip()] = y.strip()
 
 
 def botList():
     return [x for x in os.listdir(PARROTPATH) if os.path.isdir(x) and 'bot' in x]
 
+
 class User:
     def __init__(self, path):
         self.path = path
         settings = {}
-        
+
         for line in open(self.path + '/parrot.cfg'):
-            x,y = line.split('=')
+            x, y = line.split('=')
             settings[x.strip()] = y.strip()
+        self.settings = settings
 
-            self.settings =  settings
-        
         self.t = self.initializeTwitter()
-
         self.statuses = self.grabTStatuses()
 
     def initializeTwitter(self):
@@ -74,7 +71,6 @@ class User:
             print(str(e))
             exit
         return t
-
 
     def grabTStatuses(self):
         # Grab statuses
@@ -94,7 +90,6 @@ class User:
         with open(self.path + "/echo.csv", "a") as myfile:
             myfile.write('\n' + echo.string)
         myfile.close
-
 
     def postStatus(self, status):
         try:
@@ -119,13 +114,15 @@ class User:
         res += "\n (" + str(self.statuses[0].age) + "s old)"
         return res
 
-"""
-pStatus = parrotStatus
 
-pStatus contains all the variables that are common between echo and squawk,
-    which inherit pStatus
-"""
 class pStatus:
+    """
+    pStatus = parrotStatus
+
+    pStatus contains all the variables that are common between echo and squawk,
+        which inherit pStatus
+    """
+
     def __init__(self, text, location, gHash, lHash, categories):
         self.text = text
         self.location = location
@@ -173,7 +170,7 @@ class pStatus:
                 self._gHash = False
             else:
                 self._gHash = False
-    
+
     @property
     def lHash(self):
         return self._lHash
@@ -204,21 +201,20 @@ class pStatus:
             self._categories = value[:]
         if type(value) == str:
             self._categories = value.split(',')
-    
+
     def __repr__(self):
         res = "pStatus:\n  " + self.text
         return res
 
 
-"""
-Example line of CSV
-
-  text    ||||time%a %b %d %H:%M:%S %Y||||Locat||||GHas||||lHas||||Categories
-statusText||||Fri Jul 04 00:18:13 2014||||32304||||True||||True||||Soccer,Football
-testEcho84331||||Tue Jul 08 22:04:25 2014||||84331||||True||||True||||soccer, foosball, rand_int
-"""
-
 class Echo(pStatus):
+    """
+    Example line of CSV
+
+      text    ||||time%a %b %d %H:%M:%S %Y||||Locat||||GHas||||lHas||||Categories
+    statusText||||Fri Jul 04 00:18:13 2014||||32304||||True||||True||||Soccer,Football
+    """
+
     def __init__(self, csvLine):
         assert(type(csvLine) == str),\
             "Attempted to create Echo from type: %s" % str(type(csvLine))
@@ -236,11 +232,9 @@ class Echo(pStatus):
         self.categories = values[4]
         self.postTime = values[5]
 
-
     @property
     def postTime(self):
         return self._postTime
-
 
     @postTime.setter
     def postTime(self, value):
@@ -258,8 +252,9 @@ class Echo(pStatus):
 
     @property
     def string(self):
-        return ('||||').join([self.text, self.location,\
-            str(self.gHash), str(self.lHash), ','.join(self.categories), self.strTime])
+        return ('||||').join([self.text, self.location,
+                              str(self.gHash), str(self.lHash),
+                              ','.join(self.categories), self.strTime])
 
     def timeToPost(self):
         age = self.postTime - NOW
@@ -281,10 +276,11 @@ class Echo(pStatus):
         return res
 
 
-
-# tStatus = twitter status
-#   aka the json dict returned by Twitter
 class tStatus:
+    """
+        tStatus = twitter status
+        aka the json dict returned by Twitter
+    """
     def __init__(self, status):
         self.text = status.get('text')
         self.created_at = status.get('created_at')
@@ -318,8 +314,9 @@ class tStatus:
         strTime = ' '.join(
             self.created_at.split(' ')[:4]) + ' ' + str(NOW.year)
         statusTime = datetime.datetime.strptime(strTime, '%a %b %d %H:%M:%S %Y')
-        age =  NOW - statusTime
+        age = NOW - statusTime
         return age.seconds
+
 
 class Timeline:
     def __init__(t):
@@ -336,7 +333,7 @@ def runsquawk(user):
 def check(user):
     print("Squawk Check")
     lastStatus = user.statuses[0]
-    
+
     freqInMinutes = int(user.settings['frequency']) * 60
     if lastStatus.measureAge() < freqInMinutes:
         squawk.run(user)
@@ -350,9 +347,8 @@ def grabSquawk(user):
     for line in open(user.path + '/squawk.csv'):
         try:
             newEcho = Echo(line.strip())
-            if NOW > newEcho.time:
-                 print("OLD ECHO: " + newEcho.text)
-            else:
+            # Only keep an echo if it's not old
+            if NOW < newEcho.time:
                 lines.append(line)
                 res.append(newEcho)
         except Exception as e:
@@ -368,6 +364,7 @@ def grabSquawk(user):
     print("Found %d non-old echoes" % len(res))
     return res
 
+
 class Squawk:
     def __init__(self, string=None):
         # String is pulled from echo.csv
@@ -379,11 +376,12 @@ class Squawk:
 
     def initFromCSVLine(self, string):
         # CSV Line should come in form of 6 values delimeted by '||||'
-        #     text, prevTime, countDown, location, gHash, lHash, categories, startTime
+        # text, prevTime, countDown, location, gHash, lHash, categories, startTime
         string = self.string
         values = string.split('||||')
         
-        assert(len(values) == 6), 'Found %d fields in CSV line:\n %s' % (len(values), string)
+        assert(len(values) == 6),\
+            'Found %d fields in CSV line:\n %s' % (len(values), string)
         
         # text of status
         self.text = values[0]
@@ -400,7 +398,7 @@ class Squawk:
         self.gHash = strToBool(values[4])
         self.lHash = strToBool(values[5])
 
-        # what categories should hashes be from?            
+        # what categories should hashes be from?
         self.categories = values[6].split(',')
 
         # when squawk goes into effect
