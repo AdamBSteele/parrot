@@ -1,7 +1,9 @@
 import argparse
-from parrotSuite import *
+import os
 import random
 
+from parrotSuite import *
+import datetime
 DEBUG_SETTINGS = False
 
 """
@@ -17,11 +19,8 @@ The driver iterates through all bots in PARROTDIR
     - Update metrics
 """
 
-
-
 def main():
     args = parseArgs()
-
     for bot in botList():
         fullPath = PARROTPATH + '/' +  bot
         user = User(fullPath)
@@ -31,14 +30,14 @@ def main():
             testEchoCreation(user, args.createEchoes)
 
         # check to see if an echo needs to be posted
-        echoPosted = echo.checkForAutoPost(user)
+        echoPosted = checkForAutoPost(user)
         
         # If you didn't post an echo, check if it's time to squawk
         if not echoPosted:
-            squawk.check(user)
+            check(user)
 
         # No matter what, grab whatever metrics you can
-        metrics.run(user)
+        runsquawk(user)
 
 
 def parseArgs():
@@ -48,8 +47,9 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+# Create an echo for sometime in the next 3 - 10 minutes.
+# Then put it in the CSV
 def createTestEcho():
-    # For creating a test echo
     rand_int = str(random.randint(10000, 99999))
     time_addition = random.randint(200, 600)
     text = "testEcho" + rand_int
@@ -57,18 +57,56 @@ def createTestEcho():
     time = NOW + datetime.timedelta(0,time_addition)
     gHash = True
     lHash = True
-    categories = ['soccer', 'foosball', rand_int]
-
+    categories = 'soccer, football'
+    time = datetime.datetime.strftime(time, '%a %b %d %H:%M:%S %Y')
     print("Creating echo (seed %s: , time_diff: %ds)"  % (rand_int, time_addition))
-
-    newEcho = echo.Echo()
-    newEcho.initFromValues(text, time, location, gHash, lHash, categories)
+    csvString = '||||'.join(map(str, [text, location, gHash, lHash, categories, time]))
+    print("CSVstring: \n %s" % csvString)
+    newEcho = Echo(csvString)
+    #newinitFromValues()
     return newEcho
 
 def testEchoCreation(user, count):
     for _ in range(0, count):
         newEcho = createTestEcho()
         user.writeEchoCSV(newEcho)
+
+def checkForAutoPost(user):
+    echoList = readEchoes(user.path)
+    for echo in echoList:
+        if echo.timeToPost():
+            print("POSTING")
+            print(echo)
+            user.postStatus(echo)
+            return True
+        print(echo)
+    return False
+
+def readEchoes(path):
+    res = []
+    lines = []
+    lineNo = 0
+    for line in open(path + '/echo.csv'):
+        try:
+            newEcho = Echo(line.strip())
+            if NOW > newEcho.postTime:
+                 print("OLD ECHO: " + newtext)
+            else:
+                lines.append(line)
+                res.append(newEcho)
+        except Exception as e:
+            print("readEchoes failed on line %d" % lineNo)
+            print(e)
+        lineNo += 1
+
+    # Write all non-posted lines
+    with open(path + '/csv', 'w') as myfile:
+        for line in lines:
+            myfile.write(line)
+
+    print("Found %d non-old echoes" % len(res))
+    return res
+
 
 if __name__ == '__main__':
     main()
