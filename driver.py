@@ -91,12 +91,13 @@ def readEchoes(path):
     res = []
     lines = []
     for line in open(path + '/echo.csv'):
-        newEcho = Echo(line.strip())
-        if NOW > newEcho.postTime:
-            print("OLD ECHO: " + newEcho.text)
-        else:
-            lines.append(line)
-            res.append(newEcho)
+        if len(line.split('||||')) == 6:
+            newEcho = Echo(line.strip())
+            if NOW > newEcho.postTime:
+                print("OLD ECHO: " + newEcho.text)
+            else:
+                lines.append(line)
+                res.append(newEcho)
 
     # Write all non-posted lines
     with open(path + '/echo.csv', 'w') as myfile:
