@@ -17,6 +17,10 @@ The driver iterates through all bots in PARROTDIR
         - Count down squawk counter
         - Remove dead squawks
     - Update metrics
+
+TODO:
+    unit testing
+    Flask UI
 """
 
 
@@ -106,6 +110,47 @@ def readEchoes(path):
 
     print("Found %d non-old echoes" % len(res))
     return res
+
+
+def runsquawk(user):
+    newStatus = grabSquawk(user)
+    user.postStatus(newStatus)
+
+
+def check(user):
+    print("Squawk Check")
+    lastStatus = user.statuses[0]
+
+    freqInMinutes = int(user.settings['frequency']) * 60
+    if lastStatus.measureAge() < freqInMinutes:
+        squawk.run(user)
+
+
+def grabSquawk(user):
+
+    res = []
+    lines = []
+    lineNo = 0
+    for line in open(user.path + '/squawk.csv'):
+        try:
+            newEcho = Echo(line.strip())
+            # Only keep an echo if it's not old
+            if NOW < newEcho.time:
+                lines.append(line)
+                res.append(newEcho)
+        except Exception as e:
+            print("squawk failed on line %d" % lineNo)
+            print(e)
+        lineNo += 1
+
+    # Write all non-posted lines
+    with open(user.path + '/squawk.csv', 'w') as myfile:
+        for line in lines:
+            myfile.write(line)
+
+    print("Found %d non-old echoes" % len(res))
+    return res
+
 
 
 if __name__ == '__main__':

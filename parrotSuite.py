@@ -211,8 +211,8 @@ class Echo(pStatus):
     """
     Example line of CSV
 
-      text    ||||time%a %b %d %H:%M:%S %Y||||Locat||||GHas||||lHas||||Categories
-    statusText||||Fri Jul 04 00:18:13 2014||||32304||||True||||True||||Soccer,Football
+      text    ||||Locat||||GHas||||lHas||||Categories     ||||postTime%a %b %d %H:%M:%S %Y
+    statusText||||32304||||True||||True||||Soccer,Football||||Fri Jul 04 00:18:13 2014
     """
 
     def __init__(self, csvLine):
@@ -317,14 +317,6 @@ class tStatus:
         age = NOW - statusTime
         return age.seconds
 
-
-class Timeline:
-    def __init__(t):
-        self.t = t
-        self.statuses = []
-        self.lastStatus = None
-
-
 def runsquawk(user):
     newStatus = grabSquawk(user)
     user.postStatus(newStatus)
@@ -365,43 +357,86 @@ def grabSquawk(user):
     return res
 
 
-class Squawk:
-    def __init__(self, string=None):
-        # String is pulled from echo.csv
-        self.string = string
+class Squawk(pStatus):
+    """
+    Example line of CSV
 
-        # If string is not None, parse string
-        if string is not None:
-            self.initFromCSVLine(string)
+    text||||Locat||||GHas||||lHas||||Categories||||strtTime||||endTime
+    """
 
-    def initFromCSVLine(self, string):
+    def __init__(self, csvLine):
+        assert(type(csvLine) == str),\
+            "Attempted to create Echo from type: %s" % str(type(csvLine))
+
         # CSV Line should come in form of 6 values delimeted by '||||'
-        # text, prevTime, countDown, location, gHash, lHash, categories, startTime
-        string = self.string
-        values = string.split('||||')
-        
+        #     text, location, gHash, lHash, categories, postTime
+        values = csvLine.split('||||')
         assert(len(values) == 6),\
             'Found %d fields in CSV line:\n %s' % (len(values), string)
-        
-        # text of status
+
         self.text = values[0]
+        self.location = values[1]
+        self.gHash = values[2]
+        self.lHash = values[3]
+        self.categories = values[4]
+        self.startTime = values[5]
+        self.endTime = values[6]
 
-        # time to post
-        self.prevTime = datetime.datetime.strptime(values[1], '%a %b %d %H:%M:%S %Y')
+    @property
+    def startTime(self):
+        return self._startTime
 
-        self.countDown = values[2]
+    @startTime.setter
+    def startTime(self, value):
+        assert(type(value) == str or type(value) == datetime.datetime),\
+            "Tried to pass type \'%s\' into squawk.startTime" % str(type(value))
+        if type(value) == str:
+            # time to post
+            self._startTime = datetime.datetime.strptime(value, '%a %b %d %H:%M:%S %Y')
+        if type(value) == datetime.datetime:
+            self._startTime = value
 
-        # location to post from
-        self.location = values[3]
+    @property
+    def strStartTime(self):
+        return datetime.datetime.strftime(self._strStartTime, '%a %b %d %H:%M:%S %Y')
 
-        # append global or local hashes?
-        self.gHash = strToBool(values[4])
-        self.lHash = strToBool(values[5])
+    @property
+    def endTime(self):
+        return self._endTime
 
-        # what categories should hashes be from?
-        self.categories = values[6].split(',')
+    @endTime.setter
+    def endTime(self, value):
+        assert(type(value) == str or type(value) == datetime.datetime),\
+            "Tried to pass type \'%s\' into squawk.endTime" % str(type(value))
+        if type(value) == str:
+            # time to post
+            self._endTime = datetime.datetime.strptime(value, '%a %b %d %H:%M:%S %Y')
+        if type(value) == datetime.datetime:
+            self._startTime = value
 
-        # when squawk goes into effect
-        #  For example, user may want to pre-set squawks for a
-        #  an upcoming event / month / whatev
-        self.prevTime = datetime.datetime.strptime(values[1], '%a %b %d %H:%M:%S %Y')
+    @property
+    def strEndTime(self):
+        return datetime.datetime.strftime(self._endTime, '%a %b %d %H:%M:%S %Y')
+
+    @property
+    def string(self):
+        return ('||||').join([self.text, self.location,
+                              str(self.gHash), str(self.lHash),
+                              ','.join(self.categories), self.strStartTime,
+                              self.strEndTime])
+
+    def current(self):
+        return self.startTime < NOW and self.endTime > NOW
+
+    def __repr__(self):
+        res = "Squawk:"
+        res += "\n  Text: " + self.text
+        res += "\n  Time: " + self.strTime + "  |  Location: " + self.location
+        res += '\n  '
+        if self.gHash:
+            res += "gHash "
+        if self.lHash:
+            res += "LHash "
+        if self.gHash or self.lHash:
+            res += ' -> Categories:  ' + ','.join(self.categories)
+        return res
