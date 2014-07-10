@@ -115,6 +115,49 @@ class User:
         return res
 
 
+
+class tStatus:
+    """
+        tStatus = twitter status
+        aka the json dict returned by Twitter
+    """
+    def __init__(self, status):
+        self.text = status.get('text')
+        self.created_at = status.get('created_at')
+        self.age = self.measureAge()
+
+        self.id_str = status.get('id_str')
+        self.in_reply_to_user_id_str = status.get('in_reply_to_user_id_str')
+        self.in_reply_to_status_id = status.get('in_reply_to_status_id')
+        self.in_reply_to_status_id_str = status.get('in_reply_to_status_id_str')
+        self.contributors = status.get('contributors')
+        self.retweeted = status.get('retweeted')
+        self.lang = status.get('lang')
+        self.geo = status.get('geo')
+        self.status = status.get('status')
+        self.favorite_count = status.get('favorite_count')
+        self.id = status.get('id')
+        self.truncated = status.get('truncated')
+        self.coordinates = status.get('coordinates')
+        self.in_reply_to_user_id = status.get('in_reply_to_user_id')
+        self.in_reply_to_screen_name = status.get('in_reply_to_screen_name')
+        self.retweet_count = status.get('retweet_count')
+        self.favorited = status.get('favorited')
+
+        self.source = status.get('source')
+        self.place = status.get('place')
+        self.entities = status.get('entities')
+        self.user = status.get('user')
+
+    def measureAge(self):
+        """ Returns the age of a status (in seconds)"""
+        strTime = ' '.join(
+            self.created_at.split(' ')[:4]) + ' ' + str(NOW.year)
+        statusTime = datetime.datetime.strptime(strTime, '%a %b %d %H:%M:%S %Y')
+        age = NOW - statusTime
+        return age.seconds
+
+
 class pStatus:
     """
     pStatus = parrotStatus
@@ -274,87 +317,6 @@ class Echo(pStatus):
         if self.gHash or self.lHash:
             res += ' -> Categories:  ' + ','.join(self.categories)
         return res
-
-
-class tStatus:
-    """
-        tStatus = twitter status
-        aka the json dict returned by Twitter
-    """
-    def __init__(self, status):
-        self.text = status.get('text')
-        self.created_at = status.get('created_at')
-        self.age = self.measureAge()
-
-        self.id_str = status.get('id_str')
-        self.in_reply_to_user_id_str = status.get('in_reply_to_user_id_str')
-        self.in_reply_to_status_id = status.get('in_reply_to_status_id')
-        self.in_reply_to_status_id_str = status.get('in_reply_to_status_id_str')
-        self.contributors = status.get('contributors')
-        self.retweeted = status.get('retweeted')
-        self.lang = status.get('lang')
-        self.geo = status.get('geo')
-        self.status = status.get('status')
-        self.favorite_count = status.get('favorite_count')
-        self.id = status.get('id')
-        self.truncated = status.get('truncated')
-        self.coordinates = status.get('coordinates')
-        self.in_reply_to_user_id = status.get('in_reply_to_user_id')
-        self.in_reply_to_screen_name = status.get('in_reply_to_screen_name')
-        self.retweet_count = status.get('retweet_count')
-        self.favorited = status.get('favorited')
-
-        self.source = status.get('source')
-        self.place = status.get('place')
-        self.entities = status.get('entities')
-        self.user = status.get('user')
-
-    def measureAge(self):
-        """ Returns the age of a status (in seconds)"""
-        strTime = ' '.join(
-            self.created_at.split(' ')[:4]) + ' ' + str(NOW.year)
-        statusTime = datetime.datetime.strptime(strTime, '%a %b %d %H:%M:%S %Y')
-        age = NOW - statusTime
-        return age.seconds
-
-def runsquawk(user):
-    newStatus = grabSquawk(user)
-    user.postStatus(newStatus)
-
-
-def check(user):
-    print("Squawk Check")
-    lastStatus = user.statuses[0]
-
-    freqInMinutes = int(user.settings['frequency']) * 60
-    if lastStatus.measureAge() < freqInMinutes:
-        squawk.run(user)
-
-
-def grabSquawk(user):
-
-    res = []
-    lines = []
-    lineNo = 0
-    for line in open(user.path + '/squawk.csv'):
-        try:
-            newEcho = Echo(line.strip())
-            # Only keep an echo if it's not old
-            if NOW < newEcho.time:
-                lines.append(line)
-                res.append(newEcho)
-        except Exception as e:
-            print("squawk failed on line %d" % lineNo)
-            print(e)
-        lineNo += 1
-
-    # Write all non-posted lines
-    with open(user.path + '/squawk.csv', 'w') as myfile:
-        for line in lines:
-            myfile.write(line)
-
-    print("Found %d non-old echoes" % len(res))
-    return res
 
 
 class Squawk(pStatus):
