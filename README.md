@@ -1,4 +1,4 @@
-#Parrot CLient
+#Parrot Client
 ======
 A open-source, multifunctional Twitter manager
 
